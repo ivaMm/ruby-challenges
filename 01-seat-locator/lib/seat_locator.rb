@@ -77,5 +77,6 @@ def best_group_seats(consecutive_seats, json_input, people)
                             .map { |k, val| val.map { |vl| vl.map { |v| v + row_score[k] } } }
                             .flatten
 
-  seats.zip(scores).to_h.sort_by { |_k, v| -v }.to_h.keys.first(people).join(' & ')
+  seats.zip(scores).to_h.sort_by { |_k, v| -v }.to_h.keys.first(people)
+       .sort_by { |k| k.gsub(/[a-z]/, '').to_i }.join(' & ')
 end
