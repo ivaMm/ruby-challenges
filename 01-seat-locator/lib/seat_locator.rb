@@ -1,12 +1,6 @@
-def get_values(json_input)
-  # { "venue": { "layout": { "rows": 10, "columns": 50 } },
-  # "seats":
-  # { "a1": { "id": "a1", "row": "a", "column": 1, "status": "AVAILABLE" },
-  # "a2": { "id": "a2", "row": "a", "column": 2, "status": "AVAILABLE" },
-  # "a4": { "id": "a4", "row": "a", "column": 4, "status": "AVAILABLE" },
-  # "b5": { "id": "b5", "row": "b", "column": 5, "status": "AVAILABLE" },
-  # "h7": { "id": "h7", "row": "h", "column": 7, "status": "AVAILABLE" } } }
+# frozen_string_literal: true
 
+def get_values(json_input)
   {
     rows: json_input[:venue][:layout][:rows],
     columns: json_input[:venue][:layout][:columns],
@@ -41,50 +35,47 @@ def values_odd(col)
   val.flatten
 end
 
-def best_seat(json_input)
+def find_best_seat(json_input)
   row_score = row_score(json_input)
   col_score = col_score(json_input)
-  seats_keys = get_values(json_input)[:seats]
   seat_score = get_values(json_input)[:seats].map { |i| [i[0], i[1..-1]] }
-  seat_score.map! do |seat|
-    [row_score[seat[0]], col_score[seat[1]]].sum
-  end.max
-  seats_keys.zip(seat_score).to_h.sort_by { |_k, v| -v }.first[0]
+  seat_score.map! { |seat| [row_score[seat[0]], col_score[seat[1]]].sum }.max
+  (get_values(json_input)[:seats]).zip(seat_score).to_h.min_by { |_k, v| -v }[0]
 end
 
-# group consecutive seats (in rows)
+# group seats (by rows)
 def group_seats(json_input)
   seats = get_values(json_input)[:seats]
   seats.group_by { |el| el[0] }
        .transform_values { |el| el.map { |e| e.gsub(/[a-z]/, '').to_i } }
        .transform_values(&:sort)
        .transform_values { |v| v.chunk_while { |i, j| i + 1 == j }.to_a }
-       .transform_values { |val| val.select { |v| v.length > 1 } }
-       .sort_by { |k, _v| -k }
-       .reject { |el| el[1].empty? }
 end
 
-def find_group_seats(json_input, people)
+# find consecutive seats
+def find_best_group_seats(json_input, people = 2)
+  return false if people <= 1
+
   consecutive_seats = group_seats(json_input)
-  consecutive_seats.map { |el| el[1].reject! { |e| e.length < people } }
-  consecutive_seats[1].nil? ? "Sorry! There is no consecutive seats for #{people} people" : best_group_seats(consecutive_seats, people)
-    # calculate best group seats
-    # "#{consecutive_seats}"
+  consecutive_seats.map { |_k, val| val.select! { |v| v.length >= people } }
+
+  if consecutive_seats.empty?
+    "Sorry! There is no consecutive seats for #{people} people"
+  else
+    best_group_seats(consecutive_seats, json_input, people)
+  end
 end
 
-def best_group_seats(consecutive_seats, people)
-  # row_score = row_score(json_input)
-  # col_score = col_score(json_input)
+def best_group_seats(consecutive_seats, json_input, people)
+  row_score = row_score(json_input)
+  col_score = col_score(json_input)
 
-     #.map { |el| el[0] = row_score[el[0]], el[1] = el[1] } #.map { |e| e.map { |i| i = col_score[i.to_s] } } }
-     #.map { |el| el[0] = el[0], el[1] = el[1].map { |e| e.map { |i| i = col_score[i.to_s] } } }
-     #.map { |el| el[1] = el[1].map { |e| e = col_score[e.to_s] } }
+  seats = consecutive_seats.map { |k, val| val.map { |vl| vl.map { |v| k + v.to_s } } }
+                           .flatten
+
+  scores = consecutive_seats.transform_values { |val|  val.map { |vl| vl.map { |v| col_score[v.to_s] } } }
+                            .map { |k, val| val.map { |vl| vl.map { |v| v + row_score[k] } } }
+                            .flatten
+
+  seats.zip(scores).to_h.sort_by { |_k, v| -v }.to_h.keys.first(people).join(' & ')
 end
-
-# { "venue": { "layout": { "rows": 10, "columns": 50 } },"seats":{ "a3": { "id": "a3", "row": "a", "column": 3, "status": "AVAILABLE" },"a2": { "id": "a2", "row": "a", "column": 2, "status": "AVAILABLE" },"a9": { "id": "a9", "row": "a", "column": 9, "status": "AVAILABLE" },"b5": { "id": "b5", "row": "b", "column": 5, "status": "AVAILABLE" },"h7": { "id": "h7", "row": "h", "column": 7, "status": "AVAILABLE" } } }
-
-p best_seat({ "venue": { "layout": { "rows": 10, "columns": 50 } },"seats":{ "a3": { "id": "a3", "row": "a", "column": 3, "status": "AVAILABLE" },"a2": { "id": "a2", "row": "a", "column": 2, "status": "AVAILABLE" },"a9": { "id": "a9", "row": "a", "column": 9, "status": "AVAILABLE" },"b5": { "id": "b5", "row": "b", "column": 5, "status": "AVAILABLE" },"h7": { "id": "h7", "row": "h", "column": 7, "status": "AVAILABLE" } } })
-
-p group_seats({ "venue": { "layout": { "rows": 10, "columns": 50 } },"seats":{ "h1": { "id": "h1", "row": "h", "column": 1, "status": "AVAILABLE" }, "a8": { "id": "a8", "row": "a", "column": 8, "status": "AVAILABLE" }, "a3": { "id": "a3", "row": "a", "column": 3, "status": "AVAILABLE" },"a2": { "id": "a2", "row": "a", "column": 2, "status": "AVAILABLE" },"a9": { "id": "a9", "row": "a", "column": 9, "status": "AVAILABLE" },"b5": { "id": "b5", "row": "b", "column": 5, "status": "AVAILABLE" },"h7": { "id": "h7", "row": "h", "column": 7, "status": "AVAILABLE" } } })
-
-p find_group_seats({ "venue": { "layout": { "rows": 10, "columns": 50 } },"seats":{ "h1": { "id": "h1", "row": "h", "column": 1, "status": "AVAILABLE" }, "a8": { "id": "a8", "row": "a", "column": 8, "status": "AVAILABLE" }, "a3": { "id": "a3", "row": "a", "column": 3, "status": "AVAILABLE" },"a2": { "id": "a2", "row": "a", "column": 2, "status": "AVAILABLE" },"a9": { "id": "a9", "row": "a", "column": 9, "status": "AVAILABLE" },"b5": { "id": "b5", "row": "b", "column": 5, "status": "AVAILABLE" },"h7": { "id": "h7", "row": "h", "column": 7, "status": "AVAILABLE" } } }, 3)
