@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# seats.reject! { |k, v| v.has_value?('NO AVAILABLE') }
 def get_values(json_input)
   {
     rows: json_input[:venue][:layout][:rows],
