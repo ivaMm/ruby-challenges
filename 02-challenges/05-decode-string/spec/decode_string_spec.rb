@@ -2,12 +2,8 @@
 
 require 'decode_string'
 
-describe 'decode_string' do
-  it 'should take one parameter' do
-    expect(method(:decode_string).arity).to eq(1)
-  end
-
+describe 'caesar_cipher' do
   it 'should decode string' do
-    expect(decode_string('fcjjm, pszw!')).to eq('hello, ruby!')
+    expect(caesar_cipher('fcjjm, pszw!')).to eq('hello, ruby!')
   end
 end
