@@ -31,4 +31,8 @@ def build_rect(arr)
   }
 end
 
-def overlap_area(rect1, rect2); end
+def overlap_area(rect1, rect2)
+  x_overlap = [rect1[:left], rect2[:left], rect1[:right], rect2[:right]].sort[1..2]
+  y_overlap = [rect1[:top], rect2[:top], rect1[:bottom], rect2[:bottom]].sort[1..2]
+  (x_overlap.reduce(&:-) * y_overlap.reduce(&:-)).abs
+end
