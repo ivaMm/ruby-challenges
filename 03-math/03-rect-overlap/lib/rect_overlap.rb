@@ -16,7 +16,7 @@ def rect_overlap(arr)
      r1[:bottom] >= r2[:top] # r1 is above r2
     false
   else
-    overlap_area(r1, r2) # TODO!
+    overlap_area(r1, r2)
   end
 end
 
